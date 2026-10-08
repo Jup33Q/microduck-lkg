@@ -1,0 +1,5 @@
+module MuJoCo {
+    umbrella header "mujoco/mujoco.h"
+    export *
+    module * { export * }
+}

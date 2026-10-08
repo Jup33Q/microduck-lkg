@@ -1,0 +1,5 @@
+module COnnxRuntime {
+  header "COnnxRuntime.h"
+  export *
+  link "onnxruntime.1.24.4"
+}

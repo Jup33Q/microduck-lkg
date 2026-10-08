@@ -1,0 +1,59 @@
+<mujoco model="arena_ball">
+    <!-- quackd 0.14.0 竞技场复刻（laya-vision-microduck-kick VLM 的训练域）：
+         2m 围墙 + 橙球（r=0.05, m=0.05, condim 6, rolling 0.002）+ 双地板
+         （group1 蓝格 = 操作员/quilt 视角；group3 灰格 = 头相机视角，quackd 惯例，
+         group3 同时是机器人碰撞体组——头视角下与 quackd 一致地可见）。
+         头相机帧语义：fovy 90、无天空盒（黑底）、无 AA、headlight ambient .3 /
+         diffuse .6 / specular 0 + 顶光 0.7。render 侧由 viewer 的 headcam 模式保证。
+         无 keyframe（球 freejoint 改变 nq，与 scene_ball.xml 同理）。 -->
+    <!-- 注意 MuJoCo include 合并语义：被包含文件的 compiler 覆盖先前者，
+         本文件的 meshdir 覆盖必须放在 include 之后（否则跨目录 include 时
+         mesh 解析丢 meshdir，报 'Error opening file .../face_part.stl'）。
+         {{ROBOT_DIR}} 由 viewer 加载时替换（bundle Resources/robot 或开发路径，
+         见 main.swift resolveRobotDir）。 -->
+    <include file="{{ROBOT_DIR}}/robot_groundcontact.xml"/>
+    <compiler angle="radian" autolimits="true" meshdir="{{ROBOT_DIR}}/assets"/>
+
+    <visual>
+        <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0" />
+        <rgba haze="0.15 0.25 0.35 1" />
+        <global azimuth="160" elevation="-20" fovy="90" />
+        <quality offsamples="0" />
+    </visual>
+
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512"
+            height="3072" />
+        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4"
+            rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300" />
+        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5"
+            reflectance="0.2" />
+        <!-- 灰格地板：quackd quackd_floor_cam，仅头相机视角（group 3） -->
+        <texture type="2d" name="floorcam" builtin="checker" mark="edge" rgb1="0.62 0.62 0.62"
+            rgb2="0.50 0.50 0.50" markrgb="0.85 0.85 0.85" width="300" height="300" />
+        <material name="floorcam" texture="floorcam" texuniform="true" texrepeat="5 5"
+            reflectance="0" />
+    </asset>
+
+    <worldbody>
+        <light pos="0 0 3.5" dir="0 0 -1" directional="true" />
+        <geom name="floor" type="plane" group="1" size="1.5 1.5 0.05" material="groundplane"
+            friction="0.8 0.005 0.0001" />
+        <geom name="floor_cam" type="plane" group="3" contype="0" conaffinity="0"
+            size="1.5 1.5 0.05" material="floorcam" />
+        <!-- 围墙：quackd 灰 0.55/0.55/0.58，arena [-1,1]^2，墙厚 0.04 高 0.16。
+             group 4 = 仅 head-cam 可见（VLM 训练分布里有墙），quilt/预览窗不画
+             （跟随相机会被墙挡视线）；碰撞不受影响（visual group 只管显示）。 -->
+        <geom name="wall_east" type="box" group="4" pos="1.02 0 0.08" size="0.02 1.02 0.08" rgba="0.55 0.55 0.58 1" />
+        <geom name="wall_west" type="box" group="4" pos="-1.02 0 0.08" size="0.02 1.02 0.08" rgba="0.55 0.55 0.58 1" />
+        <geom name="wall_north" type="box" group="4" pos="0 1.02 0.08" size="1.02 0.02 0.08" rgba="0.55 0.55 0.58 1" />
+        <geom name="wall_south" type="box" group="4" pos="0 -1.02 0.08" size="1.02 0.02 0.08" rgba="0.55 0.55 0.58 1" />
+        <!-- 球：quackd r=0.05/condim 6；质量 0.05→0.15 + rolling 0.002→0.004
+             （用户调手感：身体冲撞不再把球推飞，踢出滚动 ~0.7m→~0.3m） -->
+        <body name="ball" pos="0.8 0 0.05">
+            <freejoint name="ball_free" />
+            <geom name="ball_geom" type="sphere" size="0.05" rgba="1 0.55 0 1" condim="6"
+                mass="0.15" friction="0.8 0.005 0.004" />
+        </body>
+    </worldbody>
+</mujoco>

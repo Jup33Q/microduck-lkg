@@ -1,0 +1,13 @@
+# Build artifacts
+.build/
+build/
+DerivedData/
+
+# Model weights — download from Hugging Face instead (see README.md)
+models/
+
+# Logs & OS noise
+MUJOCO_LOG.TXT
+.DS_Store
+xcuserdata/
+*.xcuserstate
